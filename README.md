@@ -71,3 +71,9 @@ Got it running on something else? Open an issue with your `lsusb` line, GPU and 
 ## License
 
 MIT for the scripts in this repo. `triggerdm` is GPL-2.0 under its own license (submodule, not copied here).
+
+## Brightness
+
+The T6 does not pass DDC/CI through, so `ddcutil` cannot change the monitor's brightness, and the EVDI output has no gamma control either. Its vendor I2C requests (`0x81` read, `0x02` write) are rejected by the firmware (USB STALL), and the Windows driver never uses them in the captures in [cyrozap/mct-usb-display-adapter-re](https://github.com/cyrozap/mct-usb-display-adapter-re). `tools/t6-i2c-probe.c` is the read-only probe used to check this; it may help anyone digging further.
+
+What works instead is a software overlay: a click-through, semi-transparent black layer over the T6 screen.
