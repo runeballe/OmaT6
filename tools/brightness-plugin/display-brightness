@@ -1,0 +1,37 @@
+#!/bin/bash
+# Helper for the OmaT6 Brightness bar widget.
+#   display-brightness list          -> JSON: {"ok":true,"monitors":[{name,description,value}]}
+#   display-brightness set NAME PCT  -> sets brightness, prints the same JSON for NAME
+set -o pipefail
+tool="$(dirname "$(readlink -f "$0")")/brightness-display"
+
+[[ -x $tool ]] || { printf '{"ok":false,"error":"Missing %s"}\n' "$tool"; exit 0; }
+
+read_one() {
+  local name="$1" desc="$2" value
+  value="$("$tool" --monitor "$name" 2>/dev/null | head -n1)"
+  [[ $value =~ ^[0-9]+$ ]] || value=null
+  jq -cn --arg n "$name" --arg d "$desc" --argjson v "$value" '{name:$n, description:$d, value:$v}'
+}
+
+case "${1:-list}" in
+  list)
+    tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+    i=0
+    while IFS=$'\t' read -r name desc; do
+      read_one "$name" "$desc" >"$tmp/$i" &
+      i=$((i + 1))
+    done < <(hyprctl monitors -j | jq -r '.[] | select(.disabled == false) | [.name, (.make + " " + .model)] | @tsv')
+    wait
+    cat "$tmp"/* 2>/dev/null | jq -cs '{ok:true, monitors:.}'
+    ;;
+  set)
+    name="${2:-}" pct="${3:-}"
+    [[ $name =~ ^[A-Za-z0-9-]+$ && $pct =~ ^[0-9]+$ ]] || { echo '{"ok":false,"error":"bad arguments"}'; exit 0; }
+    if "$tool" --monitor "$name" --no-osd "$pct%" >/dev/null 2>&1; then
+      echo '{"ok":true}'
+    else
+      jq -cn --arg n "$name" '{ok:false, error:("Could not set brightness on " + $n)}'
+    fi
+    ;;
+esac

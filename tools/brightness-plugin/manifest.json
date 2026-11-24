@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.runeballe.omat6-brightness",
+  "name": "OmaT6 Brightness",
+  "version": "0.1.0",
+  "author": "Rune Balstad",
+  "license": "MIT",
+  "description": "Brightness sliders for every display. Screens on an MCT T6 USB adapter (no DDC/CI, no gamma) are dimmed with a click-through overlay.",
+  "kinds": ["bar-widget"],
+  "entryPoints": { "barWidget": "BarWidget.qml" },
+  "barWidget": {
+    "displayName": "OmaT6 Brightness",
+    "description": "Brightness sliders per display; scroll the icon to adjust one of them",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": { "scrollMonitor": "DVI-I-1" },
+    "schema": [
+      { "key": "scrollMonitor", "type": "string", "label": "Monitor adjusted by scrolling the icon" }
+    ]
+  }
+}

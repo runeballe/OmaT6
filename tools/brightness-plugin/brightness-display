@@ -1,0 +1,54 @@
+#!/bin/bash
+# Brightness for one monitor. Screens on an EVDI virtual output (the MCT T6,
+# shown by Hyprland as DVI-I-N) have no DDC/CI and no gamma control, so their
+# level is stored in a state file and the plugin's DimOverlay draws a
+# click-through black layer over them. Every other monitor goes to Omarchy's
+# own omarchy-brightness-display.
+#
+# Usage: brightness-display [--no-osd] [--monitor NAME] [+N%|N%-|N%]
+#   With no step, prints the current level.
+#
+# OMAT6_OVERLAY_MONITORS  space-separated names to dim with the overlay
+#                         (default: every DVI-I-* monitor)
+
+MIN_PERCENT=10
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/omat6-brightness"
+
+args=("$@") no_osd=0 monitor=""
+while (( $# > 0 )); do
+  case "$1" in
+    --no-osd) no_osd=1; shift ;;
+    --monitor) monitor="$2"; shift 2 ;;
+    *) break ;;
+  esac
+done
+step="${1:-}"
+[[ -n $monitor ]] || monitor="$(omarchy-hyprland-monitor-focused 2>/dev/null)"
+[[ $monitor =~ ^[A-Za-z0-9-]+$ ]] || exit 1
+
+overlay=0
+if [[ -n ${OMAT6_OVERLAY_MONITORS:-} ]]; then
+  for m in $OMAT6_OVERLAY_MONITORS; do [[ $m == "$monitor" ]] && overlay=1; done
+else
+  [[ $monitor == DVI-I-* ]] && overlay=1
+fi
+
+(( overlay )) || exec omarchy-brightness-display "${args[@]}"
+
+state="$STATE_DIR/overlay-$monitor"
+current=100
+[[ -r $state ]] && read -r current <"$state"
+[[ $current =~ ^[0-9]+$ ]] || current=100
+
+if [[ -z $step ]]; then echo "$current"; exit 0; fi
+if   [[ $step =~ ^\+([0-9]+)%$ ]]; then target=$(( current + BASH_REMATCH[1] ))
+elif [[ $step =~ ^([0-9]+)%-$  ]]; then target=$(( current - BASH_REMATCH[1] ))
+elif [[ $step =~ ^([0-9]+)%$   ]]; then target=${BASH_REMATCH[1]}
+else exit 1; fi
+(( target < MIN_PERCENT )) && target=$MIN_PERCENT
+(( target > 100 )) && target=100
+
+mkdir -p "$STATE_DIR"
+printf '%d\n' "$target" >"$state.tmp" && mv -f "$state.tmp" "$state"
+(( no_osd )) || omarchy-osd -i brightness -p "$target" >/dev/null 2>&1
+echo "$target"
