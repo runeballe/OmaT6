@@ -27,7 +27,7 @@ Something like `ID 0711:5601 Magic Control Technology Corp. T6 USB Station` mean
 ## Install
 
 ```
-git clone --recursive https://github.com/<you>/OmaT6.git
+git clone --recursive https://github.com/runeballe/OmaT6.git
 cd OmaT6
 ./install.sh --preview   # shows what it will do
 ./install.sh             # asks for your password where needed
