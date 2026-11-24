@@ -1,0 +1,3 @@
+[submodule "triggerdm"]
+	path = triggerdm
+	url = https://github.com/mcttrigger/triggerdm.git

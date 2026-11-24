@@ -1,0 +1,14 @@
+[Unit]
+Description=MCT Trigger 6 USB display driver (T6 USB Station)
+After=systemd-modules-load.service
+Wants=systemd-modules-load.service
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/modprobe evdi
+ExecStart=/usr/local/bin/triggerdm
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
